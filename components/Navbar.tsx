@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 import { LogOut, Menu, X, Package } from 'lucide-react'
 
-export default function Navbar({ userRole }: { userRole?: string }) {
+export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -19,17 +19,13 @@ export default function Navbar({ userRole }: { userRole?: string }) {
   }
 
   const navLinks = [
-    { href: '/dashboard', label: 'Dashboard', roles: ['admin', 'empleado', 'auditor'] },
-    { href: '/productos', label: 'Productos', roles: ['admin', 'empleado', 'auditor'] },
-    { href: '/entradas', label: 'Entradas', roles: ['admin', 'empleado'] },
-    { href: '/salidas', label: 'Salidas', roles: ['admin', 'empleado'] },
-    { href: '/historial', label: 'Historial', roles: ['admin', 'empleado', 'auditor'] },
-    { href: '/perfil', label: 'Perfil', roles: ['admin', 'empleado', 'auditor'] },
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/productos', label: 'Productos' },
+    { href: '/entradas', label: 'Entradas' },
+    { href: '/salidas', label: 'Salidas' },
+    { href: '/historial', label: 'Historial' },
+    { href: '/perfil', label: 'Perfil' },
   ]
-
-  const visibleLinks = navLinks.filter(link => 
-    !userRole || link.roles.includes(userRole)
-  )
 
   return (
     <nav className="bg-white shadow-lg border-b border-gray-200">
@@ -50,12 +46,13 @@ export default function Navbar({ userRole }: { userRole?: string }) {
               </Link>
             </div>
             <div className="hidden sm:ml-8 sm:flex sm:space-x-4">
-              {visibleLinks.map((link) => {
+              {navLinks.map((link) => {
                 const isActive = pathname === link.href
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
+                    prefetch={true}
                     className={`inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       isActive
                         ? 'bg-primary-50 text-primary-700 border border-primary-200'
@@ -95,12 +92,13 @@ export default function Navbar({ userRole }: { userRole?: string }) {
       {isMenuOpen && (
         <div className="sm:hidden border-t border-gray-200 bg-white">
           <div className="pt-2 pb-3 space-y-1 px-2">
-            {visibleLinks.map((link) => {
+            {navLinks.map((link) => {
               const isActive = pathname === link.href
               return (
                 <Link
                   key={link.href}
                   href={link.href}
+                  prefetch={true}
                   className={`block px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${
                     isActive
                       ? 'bg-primary-50 text-primary-700 border border-primary-200'

@@ -22,6 +22,7 @@ export default async function HistorialPage({
     .from('movimientos')
     .select('*, productos(nombre)')
     .order('fecha', { ascending: false })
+    .limit(500) // Limitar resultados para mejorar rendimiento
 
   if (searchParams.producto_id) {
     query = query.eq('producto_id', searchParams.producto_id)
@@ -43,19 +44,18 @@ export default async function HistorialPage({
     query = query.eq('responsable', searchParams.responsable)
   }
 
-  const { data: movimientos, error } = await query
+  // Ejecutar todas las consultas en paralelo
+  const [movimientosResult, productosResult, perfilesResult] = await Promise.all([
+    query,
+    // Solo obtener productos necesarios para el filtro
+    supabase.from('productos').select('id, nombre').order('nombre').limit(1000),
+    // Solo obtener perfiles necesarios para el filtro
+    supabase.from('perfiles').select('user_id, nombre').order('nombre'),
+  ])
 
-  // Get productos for filter
-  const { data: productos } = await supabase
-    .from('productos')
-    .select('id, nombre')
-    .order('nombre')
-
-  // Get usuarios for filter
-  const { data: perfiles } = await supabase
-    .from('perfiles')
-    .select('user_id, nombre')
-    .order('nombre')
+  const { data: movimientos, error } = movimientosResult
+  const { data: productos } = productosResult
+  const { data: perfiles } = perfilesResult
 
   // Map movimientos with profile names
   const movimientosWithProfiles = movimientos?.map((movimiento) => {

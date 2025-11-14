@@ -50,6 +50,11 @@ CREATE INDEX IF NOT EXISTS idx_movimientos_tipo ON movimientos(tipo);
 CREATE INDEX IF NOT EXISTS idx_movimientos_responsable ON movimientos(responsable);
 CREATE INDEX IF NOT EXISTS idx_productos_categoria ON productos(categoria);
 CREATE INDEX IF NOT EXISTS idx_productos_stock ON productos(stock);
+-- Índices adicionales para optimizar búsquedas y consultas frecuentes
+CREATE INDEX IF NOT EXISTS idx_productos_nombre ON productos(nombre);
+CREATE INDEX IF NOT EXISTS idx_productos_nombre_ilike ON productos USING gin(nombre gin_trgm_ops); -- Requiere extensión pg_trgm
+CREATE INDEX IF NOT EXISTS idx_movimientos_fecha_desc ON movimientos(fecha DESC);
+CREATE INDEX IF NOT EXISTS idx_perfiles_user_id ON perfiles(user_id); -- Ya existe por UNIQUE, pero explícito
 
 -- ============================================
 -- FUNCIÓN: Actualizar stock automáticamente

@@ -7,18 +7,25 @@ import Link from 'next/link'
 export default async function DashboardPage() {
   const { user, supabase } = await requireAuth()
 
-  // Get statistics
-  const [productsResult, movementsResult] = await Promise.all([
-    supabase.from('productos').select('id, stock, stock_minimo, precio_entrada', { count: 'exact' }),
+  // Get statistics - optimized queries
+  const [productsCountResult, productsDataResult, movementsResult] = await Promise.all([
+    // Solo contar productos (más rápido)
+    supabase.from('productos').select('id', { count: 'exact', head: true }),
+    // Solo datos necesarios para cálculos (limitado a 1000 para evitar timeouts)
+    supabase
+      .from('productos')
+      .select('stock, stock_minimo, precio_entrada')
+      .limit(1000),
+    // Movimientos con JOIN para evitar consulta adicional
     supabase
       .from('movimientos')
-      .select('*')
+      .select('*, productos(id, nombre)')
       .order('fecha', { ascending: false })
       .limit(5),
   ])
 
-  const totalProducts = productsResult.count || 0
-  const productos = productsResult.data || []
+  const totalProducts = productsCountResult.count || 0
+  const productos = productsDataResult.data || []
   const lowStockProducts = productos.filter((p) => p.stock < p.stock_minimo).length
   const lastMovements = movementsResult.data || []
   const inventoryValue =
@@ -26,14 +33,15 @@ export default async function DashboardPage() {
       return acc + product.stock * product.precio_entrada
     }, 0) || 0
 
-  // Get product names for movements
-  const productIds = lastMovements.map((m) => m.producto_id)
-  const { data: products } = await supabase
-    .from('productos')
-    .select('id, nombre')
-    .in('id', productIds)
-
-  const productMap = new Map(products?.map((p) => [p.id, p.nombre]) || [])
+  // Mapear productos desde el JOIN
+  const productMap = new Map(
+    lastMovements
+      .map((m) => {
+        const producto = m.productos as { id: string; nombre: string } | null
+        return producto ? [m.producto_id, producto.nombre] : null
+      })
+      .filter((item): item is [string, string] => item !== null)
+  )
 
   return (
     <Layout>
@@ -192,7 +200,9 @@ export default async function DashboardPage() {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {productMap.get(movement.producto_id) || 'Producto no encontrado'}
+                          {productMap.get(movement.producto_id) || 
+                           (movement.productos as { nombre: string } | null)?.nombre || 
+                           'Producto no encontrado'}
                         </div>
                         <div className="text-sm text-gray-500">
                           {movement.motivo} • {new Date(movement.fecha).toLocaleDateString()}

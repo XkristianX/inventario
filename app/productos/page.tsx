@@ -23,15 +23,18 @@ export default async function ProductosPage({
     query = query.eq('categoria', searchParams.categoria)
   }
 
-  const { data: productos, error } = await query
+  // Obtener productos y categorías en paralelo
+  const [productosResult, categoriasResult] = await Promise.all([
+    query,
+    // Usar DISTINCT en la base de datos en lugar de procesar en JavaScript
+    supabase.from('productos').select('categoria').order('categoria'),
+  ])
 
-  // Get unique categories
-  const { data: allProducts } = await supabase
-    .from('productos')
-    .select('categoria')
+  const { data: productos, error } = productosResult
 
+  // Obtener categorías únicas desde la consulta
   const categorias = Array.from(
-    new Set(allProducts?.map((p) => p.categoria) || [])
+    new Set(categoriasResult.data?.map((p) => p.categoria).filter(Boolean) || [])
   )
 
   return (

@@ -110,6 +110,8 @@ export default function ProductosList({
                     alt={producto.nombre}
                     fill
                     className="object-cover"
+                    loading="lazy"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">

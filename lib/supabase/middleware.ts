@@ -54,7 +54,17 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getUser()
+  // Optimización: Verificar usuario con timeout para evitar bloqueos largos
+  // Esto es necesario para mantener la sesión actualizada, pero con límite de tiempo
+  try {
+    await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<void>((resolve) => setTimeout(() => resolve(), 500)) // Timeout de 500ms
+    ])
+  } catch (error) {
+    // Ignorar errores de timeout o conexión - no bloquear la request
+    console.warn('Middleware auth check timeout or error:', error)
+  }
 
   return response
 }
